@@ -5,3 +5,6 @@
 **.pickle
 **.pyc
 **/__pycache__/*
+rpr/
+output/
+maestro-v2.0.0/
