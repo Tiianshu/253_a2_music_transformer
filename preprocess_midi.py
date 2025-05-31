@@ -3,6 +3,7 @@ import os
 import pickle
 import json
 import random
+import shutil
 
 import third_party.midi_processor.processor as midi_processor
 
@@ -82,6 +83,11 @@ def prep_custom_midi(custom_midi_root, output_dir, valid_p = 0.1, test_p = 0.2):
     given output folder. 
     ----------
     """
+    # if exists, delete the output directory
+    if os.path.exists(output_dir):
+        print("Output directory already exists. Deleting:", output_dir)
+        shutil.rmtree(output_dir)
+
     train_dir = os.path.join(output_dir, "train")
     os.makedirs(train_dir, exist_ok=True)
     val_dir = os.path.join(output_dir, "val")
@@ -95,6 +101,7 @@ def prep_custom_midi(custom_midi_root, output_dir, valid_p = 0.1, test_p = 0.2):
     train_count = 0
     val_count   = 0
     test_count  = 0
+    skipped     = 0
     
     for piece in os.listdir(custom_midi_root):
         #deciding whether the data should be part of train, valid or test dataset
@@ -121,7 +128,14 @@ def prep_custom_midi(custom_midi_root, output_dir, valid_p = 0.1, test_p = 0.2):
             o_file = os.path.join(test_dir, f_name)
             test_count += 1
         
-        prepped = midi_processor.encode_midi(mid)
+        try:
+            prepped = midi_processor.encode_midi(mid)
+            if prepped is None:
+                raise ValueError("Encoding returned None")
+        except Exception as e:
+            print(f"[Skipped] {piece} - Error: {e}")
+            skipped += 1
+            continue
 
         o_stream = open(o_file, "wb")
         pickle.dump(prepped, o_stream)
@@ -131,6 +145,7 @@ def prep_custom_midi(custom_midi_root, output_dir, valid_p = 0.1, test_p = 0.2):
         if(total_count % 50 == 0):
             print(total_count, "/", len(os.listdir(custom_midi_root)))
 
+    print(f"\nDone! Total processed: {total_count}, Skipped: {skipped}")
     print("Num Train:", train_count)
     print("Num Val:", val_count)
     print("Num Test:", test_count)
