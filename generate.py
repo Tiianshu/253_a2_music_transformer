@@ -56,6 +56,7 @@ def main():
             print("Error: No midi messages in primer file:", f)
             return
 
+        raw_mid = torch.tensor(raw_mid, dtype=TORCH_LABEL_TYPE, device=get_device())
         primer, _  = process_midi(raw_mid, args.num_prime, random_seq=False)
         primer = torch.tensor(primer, dtype=TORCH_LABEL_TYPE, device=get_device())
 
